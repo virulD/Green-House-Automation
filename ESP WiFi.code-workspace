@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../ESP WiFi"
+		},
+		{
+			"name": "ESP LDR",
+			"path": "."
+		}
+	],
+	"settings": {}
+}

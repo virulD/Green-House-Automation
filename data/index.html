@@ -1,0 +1,124 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Greenhouse Web Interface</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <h1 class="heading">Greenhouse Automation System </h1>
+        <h2 class="heading2">Control Panel</h2>
+
+        <div class="wrap">
+            
+            <div class="switches">
+                <!----------------------------------------- Fan Control ---------------------------------------------->
+                <div class="window" id="fanControl">
+                Fan:
+                <label class="switch">
+                <input type="checkbox" id="fanSwitch" onclick="toggleLed('ledTemp', this.checked)">
+                <span class="slider"></span>
+                </label>
+                <span class="status" id="fanStatus">Off</span>
+                </div>
+
+                <!----------------------------------------- Lights Control -------------------------------------------->
+                <div class="window" id="lightControl">
+                Lights:
+                <label class="switch">
+                <input type="checkbox" id="lightSwitch" onclick="toggleLed('LED', this.checked)">
+                <span class="slider"></span>
+                </label>
+                <span class="status" id="lightStatus">Off</span>
+                </div>
+
+                <!-------------------------------------------- Mode Control --------------------------------------------->
+                <div class="window" id="modeControl">
+                Mode:
+                <label class="switch">
+                <input type="checkbox" id="modeSwitch" onclick="toggleMode(this.checked)">
+                <span class="slider"></span>
+                </label>
+                <span class="status" id="modeStatus">Automatic</span>
+                </div>
+
+            </div>
+        
+            <div class="values">
+                <!--------------------------- Light Value Display --------------------->
+                <div class="valueWindow" id="lightValueDisplay">
+                Light Level: <span class="sensor-value" id="lightValue">Loading...</span>
+                </div>
+
+                <!--------------------------- Temperature Display ----------------------->
+                <div class="valueWindow" id="temperatureDisplay">
+                Temperature: <span class="sensor-value" id="temperatureValue">Loading...</span>
+                </div>
+
+                <!--------------------------- Soil Moisture Display ----------------------->
+                <div class="valueWindow" id="soilMoistureDisplay">
+                Water level: <span class="sensor-value" id="soilMoistureValue">Loading...</span>
+                </div>
+
+            </div>
+
+        </div>
+
+    
+
+        <script>
+            let isManualMode = false;
+
+            function toggleMode(isManual) {
+                isManualMode = isManual;
+                document.getElementById("modeStatus").textContent = isManual ? 'Manual' : 'Automatic';
+
+                document.getElementById("fanSwitch").disabled = !isManual;
+                document.getElementById("lightSwitch").disabled = !isManual;
+
+                fetch(`/mode?mode=${isManual ? 'manual' : 'auto'}`)
+                    .then(response => response.text())
+                    .then(data => console.log(data))
+                    .catch(error => console.error('Error:', error));
+            }
+
+            function toggleLed(led, state) {
+                if (isManualMode) {
+                    const url = `/${led}/${state ? 'on' : 'off'}`;
+                    fetch(url)
+                        .then(response => response.text())
+                        .then(data => {
+                            console.log(data);
+                            const statusElement = led === 'ledTemp' ? document.getElementById('fanStatus') : document.getElementById('lightStatus');
+                            statusElement.textContent = state ? 'On' : 'Off';
+                        })
+                        .catch(error => console.error('Error:', error));
+                }
+            }
+
+            function updateSensorValues() {
+                fetch('/sensorData')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('lightValue').textContent = data.light + ' lx';
+                        document.getElementById('temperatureValue').textContent = data.temperature + ' °C';
+                        document.getElementById('soilMoistureValue').textContent = data.soilMoisture + ' %';
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('lightValue').textContent = 'Error';
+                        document.getElementById('temperatureValue').textContent = 'Error';
+                        document.getElementById('soilMoistureValue').textContent = 'Error';
+                    });
+            }
+
+            window.onload = () => {
+                document.getElementById("fanSwitch").disabled = true;
+                document.getElementById("lightSwitch").disabled = true;
+                updateSensorValues();
+                setInterval(updateSensorValues, 1000); 
+            };
+        </script>
+    </body>
+    </html>
